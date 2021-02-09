@@ -1,0 +1,67 @@
+version: "3.8"
+services:
+  redis:
+    image: "redis:alpine"
+    container_name: "redis"
+    volumes:
+      - ./redis-data/instance_1:/data
+    expose:
+      - 6379
+    ports:
+      - "6379:6379"
+  redis-sentinel:
+    build:
+      context: ./redis-sentinel
+      args:
+        SLAVE_OF: redis
+        SENTINEL_QUORUM: 2
+        MASTER_NAME: minicluster
+    container_name: "redis-sentinel"
+    depends_on:
+      - redis
+    expose:
+      - 26379
+    ports:
+      - "26379:26379"
+  redis-2:
+    image: "redis:alpine"
+    container_name: "redis-2"
+    volumes:
+      - ./redis-data/instance_2:/data
+    expose:
+      - 6379
+    command: redis-server --slaveof redis 6379
+  redis-sentinel-2:
+    build:
+      context: ./redis-sentinel
+      args:
+        SENTINEL_QUORUM: 2
+        SLAVE_OF: redis
+        MASTER_NAME: minicluster
+    container_name: "redis-sentinel-2"
+    depends_on:
+      - redis-2
+    networks:
+      - "backend"
+    expose:
+      - 26379
+  redis-3:
+    image: "redis:alpine"
+    container_name: "redis-3"
+    volumes:
+      - ./redis-data/instance_3:/data
+    expose:
+      - 6379
+    command: redis-server --slaveof redis 6379
+  redis-sentinel-3:
+    build:
+      context: ./redis-sentinel
+      args:
+        SENTINEL_QUORUM: 2
+        SLAVE_OF: redis
+        MASTER_NAME: minicluster
+    container_name: "redis-sentinel-3"
+    depends_on:
+      - redis-3
+    expose:
+      - 26379
